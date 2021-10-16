@@ -25,6 +25,7 @@ type integrationTestConfig struct {
 	hardlinkBaseImage  string
 	serviceAccount     string
 	dockerMajorVersion int
+	skipBuildImages    bool
 }
 
 const gcrRepoPrefix string = "gcr.io/"

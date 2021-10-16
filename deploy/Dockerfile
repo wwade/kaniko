@@ -27,13 +27,13 @@ ARG TARGETPLATFORM
 RUN [ ! "x" = "x$TARGETPLATFORM" ] && `echo $TARGETPLATFORM |  awk '{split($0,a,"/"); print a[2]}' > /goarch` || echo "$GOARCH"
 
 # Get GCR credential helper
-RUN GOARCH=$(cat /goarch) && CGO_ENABLED=0 && \
+RUN GOARCH=$(cat /goarch) && CGO_ENABLED=0                                   && \
   (mkdir -p /go/src/github.com/GoogleCloudPlatform || true)                  && \
   cd /go/src/github.com/GoogleCloudPlatform                                  && \
   git clone https://github.com/GoogleCloudPlatform/docker-credential-gcr.git && \
-  cd /go/src/github.com/GoogleCloudPlatform/docker-credential-gcr            && \
-  make deps OUT_DIR=/usr/local/bin                                           && \
-  go build -ldflags "-linkmode external -extldflags -static" -i -o /usr/local/bin/docker-credential-gcr main.go
+  cd docker-credential-gcr                                                   && \
+  export GOARCH CGO_ENABLED                                                  && \
+  go build -o /usr/local/bin/docker-credential-gcr
 
 # Get Amazon ECR credential helper
 RUN GOARCH=$(cat /goarch) && go get -u github.com/awslabs/amazon-ecr-credential-helper/ecr-login/cli/docker-credential-ecr-login && \

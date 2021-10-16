@@ -107,8 +107,11 @@ func launchTests(m *testing.M) (int, error) {
 		RunOnInterrupt(func() { DeleteFromBucket(fileInBucket) })
 		defer DeleteFromBucket(fileInBucket)
 	}
-	if err := buildRequiredImages(); err != nil {
-		return 1, errors.Wrap(err, "Error while building images")
+
+	if !config.skipBuildImages {
+		if err := buildRequiredImages(); err != nil {
+			return 1, errors.Wrap(err, "Error while building images")
+		}
 	}
 
 	imageBuilder = NewDockerFileBuilder()
@@ -814,6 +817,7 @@ func initIntegrationTestConfig() *integrationTestConfig {
 	flag.StringVar(&c.gcsBucket, "bucket", "gs://kaniko-test-bucket", "The gcs bucket argument to uploaded the tar-ed contents of the `integration` dir to.")
 	flag.StringVar(&c.imageRepo, "repo", "gcr.io/kaniko-test", "The (docker) image repo to build and push images to during the test. `gcloud` must be authenticated with this repo or serviceAccount must be set.")
 	flag.StringVar(&c.serviceAccount, "serviceAccount", "", "The path to the service account push images to GCR and upload/download files to GCS.")
+	flag.BoolVar(&c.skipBuildImages, "skipBuildImages", false, "Skip building the required images (kaniko image, etc). Useful while troubleshooting test cases.")
 	flag.Parse()
 
 	if len(c.serviceAccount) > 0 {
