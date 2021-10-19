@@ -24,6 +24,7 @@ import (
 	"github.com/go-git/go-git/v5/storage/filesystem"
 	"github.com/go-git/go-git/v5/utils/ioutil"
 	"github.com/imdario/mergo"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/openpgp"
 
 	"github.com/go-git/go-billy/v5"
@@ -350,21 +351,25 @@ func PlainClone(path string, isBare bool, o *CloneOptions) (*Repository, error) 
 func PlainCloneContext(ctx context.Context, path string, isBare bool, o *CloneOptions) (*Repository, error) {
 	cleanup, cleanupParent, err := checkIfCleanupIsNeeded(path)
 	if err != nil {
+		logrus.Debugf("checkIfCleanupIsNeeded: %s", err)
 		return nil, err
 	}
 
 	r, err := PlainInit(path, isBare)
 	if err != nil {
+		logrus.Debugf("PlainInit: %s", err)
 		return nil, err
 	}
 
 	err = r.clone(ctx, o)
 	if err != nil && err != ErrRepositoryAlreadyExists {
+		logrus.Debugf("clone: %s", err)
 		if cleanup {
 			cleanUpDir(path, cleanupParent)
 		}
 	}
 
+	logrus.Debugf("final: %s", err)
 	return r, err
 }
 

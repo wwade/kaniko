@@ -17,6 +17,7 @@ limitations under the License.
 package buildcontext
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -66,8 +67,14 @@ func (g *Git) UnpackTarFromBuildContext() (string, error) {
 		SingleBranch:      g.opts.GitSingleBranch,
 		RecurseSubmodules: getRecurseSubmodules(g.opts.GitRecurseSubmodules),
 	}
+	var fetchRef string
 	if len(parts) > 1 {
-		if !strings.HasPrefix(parts[1], "refs/pull/") {
+		if plumbing.IsHash(parts[1]) || !strings.HasPrefix(parts[1], "refs/pull/") {
+			// Handle any non-branch refs separately. First, clone the repo HEAD, and
+			// then fetch and check out the fetchRef.
+			fetchRef = parts[1]
+		} else {
+			// Branches will be cloned directly.
 			options.ReferenceName = plumbing.ReferenceName(parts[1])
 		}
 	}
@@ -82,43 +89,50 @@ func (g *Git) UnpackTarFromBuildContext() (string, error) {
 
 	logrus.Debugf("Getting source from reference %s", options.ReferenceName)
 	r, err := git.PlainClone(directory, false, &options)
-
 	if err != nil {
+		logrus.Debugf("PlainClone %s", options.ReferenceName)
 		return directory, err
 	}
 
-	if len(parts) > 1 && strings.HasPrefix(parts[1], "refs/pull/") {
-
+	if fetchRef != "" {
 		err = r.Fetch(&git.FetchOptions{
 			RemoteName: "origin",
-			RefSpecs:   []config.RefSpec{config.RefSpec(parts[1] + ":" + parts[1])},
+			RefSpecs:   []config.RefSpec{config.RefSpec(fetchRef + ":" + fetchRef)},
 		})
-		if err != nil {
+		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
+			logrus.WithError(err).Errorf("Fetch fetchRef %q", fetchRef)
 			return directory, err
 		}
 	}
 
+	checkoutRef := fetchRef
 	if len(parts) > 2 {
+		checkoutRef = parts[2]
+	}
+	if checkoutRef != "" {
 		// ... retrieving the commit being pointed by HEAD
 		_, err := r.Head()
 		if err != nil {
+			logrus.WithError(err).Error("get Head")
 			return directory, err
 		}
 
 		w, err := r.Worktree()
 		if err != nil {
+			logrus.WithError(err).Error("get Worktree")
 			return directory, err
+
 		}
 
 		// ... checking out to desired commit
-		err = w.Checkout(&git.CheckoutOptions{
-			Hash: plumbing.NewHash(parts[2]),
-		})
+		hash := plumbing.NewHash(checkoutRef)
+		err = w.Checkout(&git.CheckoutOptions{Hash: hash})
 		if err != nil {
+			logrus.WithError(err).Errorf("checkout hash=%q checkoutRef=%q", hash, checkoutRef)
 			return directory, err
 		}
 	}
-	return directory, err
+	return directory, nil
 }
 
 func getGitReferenceName(directory string, url string, branch string) (plumbing.ReferenceName, error) {
