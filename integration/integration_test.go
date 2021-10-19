@@ -30,10 +30,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-git/go-git/v5"
-	gitConfig "github.com/go-git/go-git/v5/config"
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/daemon"
 	"github.com/pkg/errors"
@@ -209,54 +205,22 @@ func TestRun(t *testing.T) {
 	}
 }
 
-func findSHA(ref plumbing.ReferenceName, refs []*plumbing.Reference) (string, error) {
-	for _, ref2 := range refs {
-		if ref.String() == ref2.Name().String() {
-			return ref2.Hash().String(), nil
-		}
-	}
-	return "", errors.New("no ref found")
-}
-
-// getBranchSHA get a SHA commit hash for the given repo url and branch ref name.
-func getBranchSHA(t *testing.T, url, branch string) string {
-	repo := "https://" + url
-	c := &gitConfig.RemoteConfig{URLs: []string{repo}}
-	remote := git.NewRemote(memory.NewStorage(), c)
-	refs, err := remote.List(&git.ListOptions{})
-	if err != nil {
-		t.Fatalf("list remote %s#%s: %s", repo, branch, err)
-	}
-	commit, err := findSHA(plumbing.NewBranchReferenceName(branch), refs)
-	if err != nil {
-		t.Fatalf("findSHA %s#%s: %s", repo, branch, err)
-	}
-	return commit
-}
-
-func getGitRepo(t *testing.T, explicit bool) string {
+func getGitRepo() string {
 	var branch, repoSlug string
-	if _, ok := os.LookupEnv("TRAVIS_PULL_REQUEST"); ok {
+	if os.Getenv("TRAVIS_PULL_REQUEST") != "" {
 		branch = "master"
 		repoSlug = os.Getenv("TRAVIS_REPO_SLUG")
 		log.Printf("Travis CI Pull request source repo: %s branch: %s\n", repoSlug, branch)
-	} else if _, ok := os.LookupEnv("TRAVIS_BRANCH"); ok {
+	} else {
 		branch = os.Getenv("TRAVIS_BRANCH")
 		repoSlug = os.Getenv("TRAVIS_REPO_SLUG")
 		log.Printf("Travis CI repo: %s branch: %s\n", repoSlug, branch)
-	} else {
-		branch = "master"
-		repoSlug = "GoogleContainerTools/kaniko"
-	}
-	url := "github.com/" + repoSlug
-	if explicit {
-		return url + "#" + getBranchSHA(t, url, branch)
 	}
 	return "github.com/" + repoSlug + "#refs/heads/" + branch
 }
 
-func testGitBuildcontextHelper(t *testing.T, repo string) {
-	t.Log("testGitBuildcontextHelper repo", repo)
+func TestGitBuildcontext(t *testing.T) {
+	repo := getGitRepo()
 	dockerfile := fmt.Sprintf("%s/%s/Dockerfile_test_run_2", integrationPath, dockerfilesPath)
 
 	// Build with docker
@@ -293,18 +257,8 @@ func testGitBuildcontextHelper(t *testing.T, repo string) {
 	checkContainerDiffOutput(t, diff, expected)
 }
 
-func TestGitBuildcontext(t *testing.T) {
-	repo := getGitRepo(t, false)
-	testGitBuildcontextHelper(t, repo)
-}
-
-func TestGitBuildcontextExplicitCommit(t *testing.T) {
-	repo := getGitRepo(t, true)
-	testGitBuildcontextHelper(t, repo)
-}
-
 func TestGitBuildcontextSubPath(t *testing.T) {
-	repo := getGitRepo(t, false)
+	repo := getGitRepo()
 	dockerfile := "Dockerfile_test_run_2"
 
 	// Build with docker
@@ -313,8 +267,8 @@ func TestGitBuildcontextSubPath(t *testing.T) {
 		append([]string{
 			"build",
 			"-t", dockerImage,
-			"-f", filepath.Join(integrationPath, dockerfilesPath, dockerfile),
-			repo,
+			"-f", dockerfile,
+			repo + ":" + filepath.Join(integrationPath, dockerfilesPath),
 		})...)
 	out, err := RunCommandWithoutTest(dockerCmd)
 	if err != nil {
@@ -348,7 +302,7 @@ func TestGitBuildcontextSubPath(t *testing.T) {
 }
 
 func TestBuildViaRegistryMirrors(t *testing.T) {
-	repo := getGitRepo(t, false)
+	repo := getGitRepo()
 	dockerfile := fmt.Sprintf("%s/%s/Dockerfile_registry_mirror", integrationPath, dockerfilesPath)
 
 	// Build with docker
@@ -388,7 +342,7 @@ func TestBuildViaRegistryMirrors(t *testing.T) {
 }
 
 func TestBuildWithLabels(t *testing.T) {
-	repo := getGitRepo(t, false)
+	repo := getGitRepo()
 	dockerfile := fmt.Sprintf("%s/%s/Dockerfile_test_label", integrationPath, dockerfilesPath)
 
 	testLabel := "mylabel=myvalue"
@@ -431,7 +385,7 @@ func TestBuildWithLabels(t *testing.T) {
 }
 
 func TestBuildWithHTTPError(t *testing.T) {
-	repo := getGitRepo(t, false)
+	repo := getGitRepo()
 	dockerfile := fmt.Sprintf("%s/%s/Dockerfile_test_add_404", integrationPath, dockerfilesPath)
 
 	// Build with docker
