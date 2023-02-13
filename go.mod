@@ -37,7 +37,7 @@ require (
 	github.com/minio/highwayhash v1.0.0
 	github.com/moby/buildkit v0.0.0-20191111154543-00bfbab0390c
 	github.com/opencontainers/runtime-spec v1.0.1 // indirect
-	github.com/opencontainers/selinux v1.0.0-rc1 // indirect
+	github.com/opencontainers/selinux v1.3.1 // indirect
 	github.com/opentracing/opentracing-go v1.0.2 // indirect
 	github.com/otiai10/copy v1.0.2
 	github.com/pkg/errors v0.9.1
@@ -52,5 +52,4 @@ require (
 	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
 	google.golang.org/api v0.25.0 // indirect
 	honnef.co/go/tools v0.0.1-2020.1.4 // indirect
-	k8s.io/code-generator v0.20.1 // indirect
 )
