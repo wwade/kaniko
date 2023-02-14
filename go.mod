@@ -13,7 +13,7 @@ require (
 	cloud.google.com/go/storage v1.8.0
 	github.com/Azure/azure-pipeline-go v0.2.2 // indirect
 	github.com/Azure/azure-storage-blob-go v0.8.0
-	github.com/aws/aws-sdk-go v1.31.6
+	github.com/aws/aws-sdk-go v1.34.0
 	github.com/coreos/etcd v3.3.13+incompatible // indirect
 	github.com/docker/docker v1.14.0-0.20190319215453-e7b5f7dbe98c
 	github.com/docker/go-metrics v0.0.0-20180209012529-399ea8c73916 // indirect
@@ -52,5 +52,4 @@ require (
 	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
 	google.golang.org/api v0.25.0 // indirect
 	honnef.co/go/tools v0.0.1-2020.1.4 // indirect
-	k8s.io/code-generator v0.20.1 // indirect
 )
