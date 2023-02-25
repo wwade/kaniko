@@ -47,10 +47,9 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/tonistiigi/fsutil v0.0.0-20191018213012-0f039a052ca1 // indirect
 	github.com/vbatts/tar-split v0.10.2 // indirect
-	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
+	golang.org/x/net v0.7.0
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
-	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
+	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 	google.golang.org/api v0.25.0 // indirect
 	honnef.co/go/tools v0.0.1-2020.1.4 // indirect
-	k8s.io/code-generator v0.20.1 // indirect
 )
